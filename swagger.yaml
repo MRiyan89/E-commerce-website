@@ -1,0 +1,206 @@
+openapi: 3.0.0
+info:
+  title: Marketplace API
+  description: E-Commerce Marketplace REST API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [buyer, seller] }
+      responses:
+        '201':
+          description: User registered successfully
+  /auth/login:
+    post:
+      summary: Login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Successful login
+  /auth/me:
+    get:
+      summary: Get current logged in user details
+      responses:
+        '200':
+          description: User profile and wallet balance
+  /products:
+    get:
+      summary: List products
+      security: []
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: min_price
+          schema: { type: number }
+        - in: query
+          name: max_price
+          schema: { type: number }
+      responses:
+        '200':
+          description: List of products
+    post:
+      summary: Create a product (Seller)
+      responses:
+        '201':
+          description: Product created
+  /products/{id}:
+    get:
+      summary: Get single product
+      security: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Product details
+    patch:
+      summary: Update a product (Seller)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Product updated
+    delete:
+      summary: Soft-delete product (Seller)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Product deleted
+  /orders:
+    post:
+      summary: Place an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seller_id: { type: integer }
+                shipping_address: { type: string }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      product_id: { type: integer }
+                      quantity: { type: integer }
+      responses:
+        '201':
+          description: Order placed
+  /orders/{id}/confirm:
+    post:
+      summary: Confirm order and deduct wallet balance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Order confirmed
+  /orders/my:
+    get:
+      summary: Get buyer's order history
+      responses:
+        '200':
+          description: List of orders
+  /orders/seller:
+    get:
+      summary: Get seller's incoming orders
+      responses:
+        '200':
+          description: List of orders
+  /orders/{id}/status:
+    patch:
+      summary: Update order status (Seller)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [packed, shipped, delivered, cancelled] }
+      responses:
+        '200':
+          description: Status updated
+  /wallet:
+    get:
+      summary: Get wallet balance
+      responses:
+        '200':
+          description: Wallet balance returned
+  /wallet/topup:
+    post:
+      summary: Top up wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: { type: number }
+                reference_no: { type: string }
+      responses:
+        '200':
+          description: Wallet topped up
+  /health:
+    get:
+      summary: API Healthcheck
+      security: []
+      responses:
+        '200':
+          description: API is healthy
