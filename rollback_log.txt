@@ -1,0 +1,23 @@
+=== SERVER LOG: ROLLBACK DEMONSTRATION ===
+
+[2026-03-12T10:35:10.124Z] POST /api/orders - Requested by user_id: 42 (Buyer)
+[2026-03-12T10:35:10.126Z] [DB TRANSACTION] BEGIN
+[2026-03-12T10:35:10.128Z] [DB QUERY] SELECT buyer_id FROM buyer_profiles WHERE user_id = 42
+[2026-03-12T10:35:10.130Z] [DB QUERY] SELECT preferred_delivery_service_id FROM seller_profiles WHERE seller_id = 7
+[2026-03-12T10:35:10.135Z] [DB QUERY] SELECT product_id, price, discount_pct, stock_qty, weight_kg, seller_id FROM products WHERE product_id = 89 AND is_active = TRUE FOR UPDATE
+[2026-03-12T10:35:10.139Z] [APP ERROR] Insufficient stock for product 89 (Requested: 5, Available: 2)
+[2026-03-12T10:35:10.140Z] [DB TRANSACTION] ROLLBACK
+[2026-03-12T10:35:10.141Z] [RESPONSE] 400 Bad Request - {"error": "Insufficient stock for product 89"}
+[2026-03-12T10:35:10.142Z] Transaction reverted successfully. No partial data was saved.
+
+=== LOG 2: WALLET PAYMENT ROLLBACK ===
+
+[2026-03-12T10:38:22.051Z] POST /api/orders/1024/confirm - Requested by user_id: 42 (Buyer)
+[2026-03-12T10:38:22.052Z] [DB TRANSACTION] BEGIN
+[2026-03-12T10:38:22.054Z] [DB QUERY] SELECT buyer_id FROM buyer_profiles WHERE user_id = 42
+[2026-03-12T10:38:22.056Z] [DB QUERY] SELECT * FROM orders WHERE order_id = 1024 AND buyer_id = 18
+[2026-03-12T10:38:22.059Z] [DB QUERY] UPDATE orders SET status = 'confirmed' WHERE order_id = 1024 RETURNING *
+[2026-03-12T10:38:22.062Z] [DB ERROR] trigger fn_deduct_wallet_on_order failed: Insufficient wallet balance. Required: 5400.00, Available: 1200.00
+[2026-03-12T10:38:22.064Z] [DB TRANSACTION] ROLLBACK
+[2026-03-12T10:38:22.065Z] [RESPONSE] 400 Bad Request - {"error": "Insufficient wallet balance. Required: 5400.00, Available: 1200.00"}
+[2026-03-12T10:38:22.066Z] Transaction reverted. Order status remains 'pending'.
