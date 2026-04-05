@@ -1,0 +1,11 @@
+SELECT setval('users_user_id_seq', (SELECT MAX(user_id) FROM users));
+SELECT setval('seller_profiles_seller_id_seq', (SELECT MAX(seller_id) FROM seller_profiles));
+SELECT setval('buyer_profiles_buyer_id_seq', (SELECT MAX(buyer_id) FROM buyer_profiles));
+SELECT setval('products_product_id_seq', (SELECT MAX(product_id) FROM products));
+SELECT setval('categories_category_id_seq', (SELECT MAX(category_id) FROM categories));
+SELECT setval('delivery_services_delivery_service_id_seq', (SELECT MAX(delivery_service_id) FROM delivery_services));
+SELECT setval('wallets_wallet_id_seq', (SELECT MAX(wallet_id) FROM wallets));
+SELECT setval('orders_order_id_seq', (SELECT MAX(order_id) FROM orders));
+SELECT setval('order_items_order_item_id_seq', (SELECT MAX(order_item_id) FROM order_items));
+SELECT setval('wallet_transactions_txn_id_seq', (SELECT MAX(txn_id) FROM wallet_transactions));
+SELECT setval('product_images_image_id_seq', (SELECT MAX(image_id) FROM product_images));

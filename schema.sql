@@ -334,6 +334,45 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_credit_seller_on_delivery
 AFTER UPDATE ON orders
 FOR EACH ROW EXECUTE FUNCTION fn_credit_seller_on_delivery();
+CREATE OR REPLACE FUNCTION fn_refund_wallet_on_cancel()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_wallet_id      INT;
+    v_balance_before NUMERIC(12,2);
+BEGIN
+    IF NEW.status = 'cancelled' AND OLD.status <> 'cancelled'
+       AND OLD.status IN ('confirmed','packed','shipped') THEN
+
+        SELECT wallet_id, balance
+          INTO v_wallet_id, v_balance_before
+          FROM wallets w
+          JOIN buyer_profiles bp ON bp.user_id = w.user_id
+         WHERE bp.buyer_id = NEW.buyer_id
+           AND w.is_active = TRUE;
+
+        UPDATE wallets SET balance = balance + NEW.total_amount,
+                           updated_at = NOW()
+         WHERE wallet_id = v_wallet_id;
+
+        INSERT INTO wallet_transactions
+            (wallet_id, order_id, txn_type, amount, balance_before, balance_after, description)
+        VALUES
+            (v_wallet_id, NEW.order_id, 'refund', NEW.total_amount,
+             v_balance_before, v_balance_before + NEW.total_amount,
+             'Refund for cancelled Order #' || NEW.order_id);
+        UPDATE products p
+           SET stock_qty  = p.stock_qty + oi.quantity,
+               updated_at = NOW()
+          FROM order_items oi
+         WHERE oi.order_id = NEW.order_id
+           AND p.product_id = oi.product_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER trg_refund_wallet_on_cancel
+AFTER UPDATE ON orders
+FOR EACH ROW EXECUTE FUNCTION fn_refund_wallet_on_cancel();
 CREATE OR REPLACE FUNCTION fn_set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
